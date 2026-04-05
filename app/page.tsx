@@ -7,9 +7,6 @@ import {
   Database, Shield, Lock, ChevronRight, MoreHorizontal, AlertTriangle,
   CheckCircle2, XCircle, Download, Play, Square, RefreshCw, LogOut
 } from "lucide-react";
-import {
-  LineChart, Line, ResponsiveContainer, AreaChart, Area, BarChart, Bar, XAxis, YAxis, Tooltip
-} from "recharts";
 import { twMerge } from "tailwind-merge";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
@@ -66,6 +63,166 @@ function Badge({ type }: { type: string }) {
 function formatLatencyFromId(id: number) {
   const seed = Math.abs(id) % 90;
   return `0.${seed + 10}ms`;
+}
+
+function getSeriesBounds(values: Array<number | null>) {
+  const numericValues = values.filter((value): value is number => typeof value === "number" && Number.isFinite(value));
+
+  if (numericValues.length === 0) {
+    return { min: 0, max: 1 };
+  }
+
+  const min = Math.min(...numericValues);
+  const max = Math.max(...numericValues);
+  return min === max ? { min: min - 1, max: max + 1 } : { min, max };
+}
+
+function buildSeriesPath(values: Array<number | null>, width: number, height: number, padding: number) {
+  const { min, max } = getSeriesBounds(values);
+  const usableWidth = Math.max(width - padding * 2, 1);
+  const usableHeight = Math.max(height - padding * 2, 1);
+  const step = values.length > 1 ? usableWidth / (values.length - 1) : 0;
+  const points: Array<{ x: number; y: number; value: number }> = [];
+
+  values.forEach((value, index) => {
+    if (typeof value !== "number" || Number.isNaN(value)) {
+      return;
+    }
+
+    const x = padding + step * index;
+    const y = padding + (1 - (value - min) / (max - min)) * usableHeight;
+    points.push({ x, y, value });
+  });
+
+  const path = points.reduce((acc, point, index) => {
+    const segment = `${index === 0 ? "M" : "L"} ${point.x} ${point.y}`;
+    return `${acc} ${segment}`.trim();
+  }, "");
+
+  return { path, points, min, max };
+}
+
+function buildAreaPath(values: number[], width: number, height: number, padding: number) {
+  const { min, max } = getSeriesBounds(values);
+  const usableWidth = Math.max(width - padding * 2, 1);
+  const usableHeight = Math.max(height - padding * 2, 1);
+  const step = values.length > 1 ? usableWidth / (values.length - 1) : 0;
+  const baseline = height - padding;
+  const points = values.map((value, index) => {
+    const x = padding + step * index;
+    const y = padding + (1 - (value - min) / (max - min)) * usableHeight;
+    return { x, y };
+  });
+
+  if (points.length === 0) {
+    return "";
+  }
+
+  return `${points.reduce((acc, point, index) => `${acc}${index === 0 ? `M ${point.x} ${point.y}` : ` L ${point.x} ${point.y}`}`, "")} L ${points[points.length - 1].x} ${baseline} L ${points[0].x} ${baseline} Z`;
+}
+
+function SparklineChart({ data, stroke }: { data: Array<{ value: number }>; stroke: string }) {
+  const width = 256;
+  const height = 96;
+  const padding = 8;
+  const values = data.map((entry) => entry.value);
+  const { path } = buildSeriesPath(values, width, height, padding);
+  const areaPath = buildAreaPath(values, width, height, padding);
+
+  return (
+    <svg viewBox={`0 0 ${width} ${height}`} className="h-full w-full" aria-hidden="true">
+      <defs>
+        <linearGradient id="sparklineFill" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor={stroke} stopOpacity="0.25" />
+          <stop offset="100%" stopColor={stroke} stopOpacity="0" />
+        </linearGradient>
+      </defs>
+      <path d={areaPath} fill="url(#sparklineFill)" />
+      <path d={path} fill="none" stroke={stroke} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function AnomalyChart({ data }: { data: Array<{ time: number; normal: number; anomaly: number | null }> }) {
+  const width = 640;
+  const height = 160;
+  const padding = 16;
+  const normalValues = data.map((entry) => entry.normal);
+  const anomalyValues = data.map((entry) => entry.anomaly);
+  const normalSeries = buildSeriesPath(normalValues, width, height, padding);
+  const anomalySeries = buildSeriesPath(anomalyValues, width, height, padding);
+  const gridLines = [0.25, 0.5, 0.75].map((ratio) => padding + (height - padding * 2) * ratio);
+
+  return (
+    <svg viewBox={`0 0 ${width} ${height}`} className="h-full w-full" aria-hidden="true">
+      {gridLines.map((y) => (
+        <line key={y} x1={padding} x2={width - padding} y1={y} y2={y} stroke="#e5e7eb" strokeDasharray="4 6" />
+      ))}
+
+      <path d={normalSeries.path} fill="none" stroke="#4b5563" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+
+      {data.map((entry, index) => {
+        if (entry.anomaly == null) {
+          return null;
+        }
+
+        const point = anomalySeries.points.find((candidate) => candidate.value === entry.anomaly && Math.round(candidate.x) === Math.round(padding + (width - padding * 2) / Math.max(data.length - 1, 1) * index));
+        if (!point) {
+          return null;
+        }
+
+        return (
+          <g key={entry.time}>
+            <line x1={point.x} x2={point.x} y1={height - padding} y2={point.y} stroke="#ef4444" strokeWidth="2" strokeLinecap="round" />
+            <circle cx={point.x} cy={point.y} r="3.5" fill="#ef4444" />
+          </g>
+        );
+      })}
+    </svg>
+  );
+}
+
+function PolicyBarChart({
+  data,
+  height = 256,
+}: {
+  data: Array<{ name: string; allowed: number; blocked: number }>;
+  height?: number;
+}) {
+  const width = 640;
+  const padding = 24;
+  const maxValue = Math.max(...data.flatMap((entry) => [entry.allowed, entry.blocked]));
+  const chartHeight = height - padding * 2;
+  const chartWidth = width - padding * 2;
+  const columnWidth = chartWidth / data.length;
+  const barWidth = Math.min(36, columnWidth * 0.28);
+  const gridLines = [0.25, 0.5, 0.75].map((ratio) => padding + chartHeight * ratio);
+
+  return (
+    <svg viewBox={`0 0 ${width} ${height}`} className="h-full w-full" aria-hidden="true">
+      {gridLines.map((y) => (
+        <line key={y} x1={padding} x2={width - padding} y1={y} y2={y} stroke="#e5e7eb" strokeDasharray="4 6" />
+      ))}
+
+      {data.map((entry, index) => {
+        const groupX = padding + columnWidth * index + columnWidth / 2;
+        const allowedHeight = Math.max((entry.allowed / maxValue) * chartHeight, 4);
+        const blockedHeight = Math.max((entry.blocked / maxValue) * chartHeight, 4);
+        const allowedX = groupX - barWidth - 4;
+        const blockedX = groupX + 4;
+
+        return (
+          <g key={entry.name}>
+            <rect x={allowedX} y={height - padding - allowedHeight} width={barWidth} height={allowedHeight} rx="4" fill="#3b82f6" />
+            <rect x={blockedX} y={height - padding - blockedHeight} width={barWidth} height={blockedHeight} rx="4" fill="#ef4444" />
+            <text x={groupX} y={height - 6} textAnchor="middle" fill="#6b7280" fontSize="11">
+              {entry.name}
+            </text>
+          </g>
+        );
+      })}
+    </svg>
+  );
 }
 
 export default function Home() {
@@ -633,11 +790,7 @@ export default function Home() {
                     <div className="text-xs text-gray-500 mt-1">$&lt; 1ms avg. latency</div>
                   </div>
                   <div className="w-32 h-12">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <LineChart data={SPARK_DATA}>
-                        <Line type="monotone" dataKey="value" stroke={isLockdown ? "#ef4444" : "#3b82f6"} strokeWidth={2} dot={false} />
-                      </LineChart>
-                    </ResponsiveContainer>
+                    <SparklineChart data={SPARK_DATA} stroke={isLockdown ? "#ef4444" : "#3b82f6"} />
                   </div>
                 </div>
               </motion.div>
@@ -837,18 +990,7 @@ export default function Home() {
                         <div className="flex items-center gap-1"><div className="w-2 h-0.5 bg-red-500" /> Anomalous Spikes</div>
                       </div>
                       <div className="flex-1">
-                        <ResponsiveContainer width="100%" height="100%">
-                          <AreaChart data={ANOMALY_DATA}>
-                            <defs>
-                              <linearGradient id="colorAnomaly" x1="0" y1="0" x2="0" y2="1">
-                                <stop offset="5%" stopColor="#ef4444" stopOpacity={0.3}/>
-                                <stop offset="95%" stopColor="#ef4444" stopOpacity={0}/>
-                              </linearGradient>
-                            </defs>
-                            <Area type="monotone" dataKey="normal" stroke="#4b5563" fill="none" strokeWidth={2} />
-                            <Area type="monotone" dataKey="anomaly" stroke="#ef4444" fill="url(#colorAnomaly)" strokeWidth={2} connectNulls />
-                          </AreaChart>
-                        </ResponsiveContainer>
+                        <AnomalyChart data={ANOMALY_DATA} />
                       </div>
                     </div>
                   </div>
@@ -1268,19 +1410,13 @@ export default function Home() {
                 <div className="bg-[#ffffff] border border-[#d1d5db] rounded-xl p-5">
                   <h3 className="text-sm font-medium text-gray-900 mb-4">Actions by Policy</h3>
                   <div className="h-64">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={[
+                    <PolicyBarChart
+                      data={[
                         { name: 'Fin-Ops', allowed: reportTimeRange === '24h' ? 4000 : 28000, blocked: reportTimeRange === '24h' ? 240 : 1680 },
                         { name: 'Support', allowed: reportTimeRange === '24h' ? 3000 : 21000, blocked: reportTimeRange === '24h' ? 139 : 973 },
                         { name: 'Data', allowed: reportTimeRange === '24h' ? 2000 : 14000, blocked: reportTimeRange === '24h' ? 980 : 6860 },
-                      ]}>
-                        <XAxis dataKey="name" stroke="#6b7280" fontSize={12} tickLine={false} axisLine={false} />
-                        <YAxis stroke="#6b7280" fontSize={12} tickLine={false} axisLine={false} />
-                        <Tooltip cursor={{fill: '#1f2937'}} contentStyle={{backgroundColor: '#111318', borderColor: '#1f2937', color: '#fff'}} />
-                        <Bar dataKey="allowed" stackId="a" fill="#3b82f6" radius={[0, 0, 4, 4]} />
-                        <Bar dataKey="blocked" stackId="a" fill="#ef4444" radius={[4, 4, 0, 0]} />
-                      </BarChart>
-                    </ResponsiveContainer>
+                      ]}
+                    />
                   </div>
                 </div>
                 <div className="bg-[#ffffff] border border-[#d1d5db] rounded-xl p-5">
