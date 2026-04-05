@@ -10,13 +10,33 @@ import {
 import {
   LineChart, Line, ResponsiveContainer, AreaChart, Area, BarChart, Bar, XAxis, YAxis, Tooltip
 } from "recharts";
-import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 
+type ClassValue =
+  | string
+  | number
+  | null
+  | undefined
+  | boolean
+  | ClassValue[]
+  | { [key: string]: boolean | null | undefined };
+
+function flattenClassValue(input: ClassValue): string[] {
+  if (!input) return [];
+  if (typeof input === "string" || typeof input === "number") return [String(input)];
+  if (Array.isArray(input)) return input.flatMap(flattenClassValue);
+  if (typeof input === "object") {
+    return Object.entries(input)
+      .filter(([, value]) => Boolean(value))
+      .map(([key]) => key);
+  }
+  return [];
+}
+
 function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs));
+  return twMerge(inputs.flatMap(flattenClassValue).join(" "));
 }
 
 const SPARK_DATA = Array.from({ length: 30 }, (_, i) => ({ value: 40 + Math.sin(i / 2) * 20 + Math.random() * 10 }));
