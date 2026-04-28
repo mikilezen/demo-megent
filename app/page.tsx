@@ -788,11 +788,11 @@ export default function Home() {
                 className="flex items-center gap-2 p-1 pr-3 hover:bg-[#f0eee6] rounded-lg transition-colors"
               >
                 <div className="w-8 h-8 rounded-[18px] bg-[#30302e] flex items-center justify-center text-[#faf9f5] font-bold text-xs">
-                  D
+                  M
                 </div>
                 <div className="text-left hidden sm:block">
-                  <div className="text-xs font-semibold text-[#141413]">Cloud</div>
-                  <div className="text-[10px] text-[#87867f]">Enterprise Admin</div>
+                  <div className="text-xs font-semibold text-[#141413]">Miki</div>
+                  <div className="text-[10px] text-[#87867f]">Megent Pro</div>
                 </div>
               </button>
 
