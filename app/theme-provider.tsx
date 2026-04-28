@@ -44,6 +44,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       const next = resolveTheme(preference);
       setResolvedTheme(next);
       document.documentElement.setAttribute("data-theme", next);
+      document.documentElement.style.colorScheme = next;
     };
 
     applyTheme(theme);
