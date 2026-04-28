@@ -3,7 +3,7 @@ import "./globals.css";
 import { ThemeProvider } from "./theme-provider";
 
 export const metadata: Metadata = {
-  title: "Megennt Cloud",
+  title: "Megent Cloud",
   description: "Megent Cloud",
 };
 
