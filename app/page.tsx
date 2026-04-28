@@ -282,8 +282,8 @@ export default function Home() {
     "email.send",
   ];
 
-  const liveInterceptions = 980 + logs.length * 2;
-  const allowedDecisions = 820 + logs.filter((log) => log.decision === "ALLOWED").length * 2;
+  const liveInterceptions = 180 + logs.length * 2;
+  const allowedDecisions = 260 + logs.filter((log) => log.decision === "ALLOWED").length * 2;
   const blockedDecisions = 45 + logs.filter((log) => log.decision === "BLOCKED").length;
   const maskedDecisions = 60 + logs.filter((log) => log.decision === "MASKED (PII)").length;
   const budgetRemaining = Math.max(0, budgetLimit - 1840 - logs.length * 6);
@@ -567,7 +567,7 @@ export default function Home() {
             { icon: List, label: "Logs" },
             { icon: PieChart, label: "Reports" },
             { icon: Database, label: "Budget" },
-            { icon: CheckCircle2, label: "Try agent" },
+            { icon: CheckCircle2, label: "Try agent (soon)" },
             { icon: User, label: "Agent Passports" },
           ].map((item) => (
             <div key={item.label} className="flex flex-col">
