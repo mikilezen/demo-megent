@@ -4,7 +4,9 @@ import React, { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { Activity, ChevronRight, Grid, Lock, Shield, User } from "lucide-react";
-
+import { FcGoogle } from "react-icons/fc";
+import { SiAuth0 } from "react-icons/si";
+import { RiShieldUserLine } from "react-icons/ri";
 const DEMO_EMAIL = "demo@megent.dev";
 const DEMO_PASSWORD = "megent123";
 
@@ -190,15 +192,13 @@ export default function LoginPage() {
               type="button"
               onClick={() => handleProviderClick("Google")}
               className="flex items-center justify-center gap-2 rounded-xl border border-[#e8e6dc] bg-[#e8e6dc] px-4 py-2 text-sm font-semibold text-[#4d4c48] shadow-[0_0_0_1px_#d1cfc5] transition-colors hover:bg-[#f0eee6]"
-            >
-              <Grid size={16} /> Continue with Google
+            ><FcGoogle size={18} /> Continue with Google
             </button>
             <button
               type="button"
               onClick={() => handleProviderClick("SSO")}
               className="flex items-center justify-center gap-2 rounded-xl border border-[#e8e6dc] bg-[#e8e6dc] px-4 py-2 text-sm font-semibold text-[#4d4c48] shadow-[0_0_0_1px_#d1cfc5] transition-colors hover:bg-[#f0eee6]"
-            >
-              <Activity size={16} /> Continue with SSO
+            ><RiShieldUserLine size={18} /> Continue with SSO
             </button>
           </div>
 
