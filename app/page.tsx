@@ -1,10 +1,12 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import Image from "next/image";
+import { useRouter } from "next/navigation";
 import {
   Grid, Activity, FileText, User, List, PieChart, Search,
   Bell, Zap, Settings as SettingsIcon, Plus, ShieldAlert,
-  Database, Shield, Lock, ChevronRight, MoreHorizontal, AlertTriangle,
+  Database, Shield, Lock, MoreHorizontal, AlertTriangle,
   CheckCircle2, XCircle, Download, Play, Square, RefreshCw, LogOut
 } from "lucide-react";
 import { twMerge } from "tailwind-merge";
@@ -63,6 +65,20 @@ function Badge({ type }: { type: string }) {
 function formatLatencyFromId(id: number) {
   const seed = Math.abs(id) % 90;
   return `0.${seed + 10}ms`;
+}
+
+function formatCompactCount(value: number) {
+  if (value >= 1_000_000) {
+    const scaled = value / 1_000_000;
+    return `${scaled % 1 === 0 ? scaled.toFixed(0) : scaled.toFixed(1)}M`;
+  }
+
+  if (value >= 1_000) {
+    const scaled = value / 1_000;
+    return `${scaled % 1 === 0 ? scaled.toFixed(0) : scaled.toFixed(1)}K`;
+  }
+
+  return value.toString();
 }
 
 function getSeriesBounds(values: Array<number | null>) {
@@ -156,10 +172,10 @@ function AnomalyChart({ data }: { data: Array<{ time: number; normal: number; an
   return (
     <svg viewBox={`0 0 ${width} ${height}`} className="h-full w-full" aria-hidden="true">
       {gridLines.map((y) => (
-        <line key={y} x1={padding} x2={width - padding} y1={y} y2={y} stroke="#e5e7eb" strokeDasharray="4 6" />
+        <line key={y} x1={padding} x2={width - padding} y1={y} y2={y} stroke="#e8e6dc" strokeDasharray="4 6" />
       ))}
 
-      <path d={normalSeries.path} fill="none" stroke="#4b5563" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+      <path d={normalSeries.path} fill="none" stroke="#5e5d59" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
 
       {data.map((entry, index) => {
         if (entry.anomaly == null) {
@@ -173,8 +189,8 @@ function AnomalyChart({ data }: { data: Array<{ time: number; normal: number; an
 
         return (
           <g key={entry.time}>
-            <line x1={point.x} x2={point.x} y1={height - padding} y2={point.y} stroke="#ef4444" strokeWidth="2" strokeLinecap="round" />
-            <circle cx={point.x} cy={point.y} r="3.5" fill="#ef4444" />
+            <line x1={point.x} x2={point.x} y1={height - padding} y2={point.y} stroke="#b53333" strokeWidth="2" strokeLinecap="round" />
+            <circle cx={point.x} cy={point.y} r="3.5" fill="#b53333" />
           </g>
         );
       })}
@@ -201,7 +217,7 @@ function PolicyBarChart({
   return (
     <svg viewBox={`0 0 ${width} ${height}`} className="h-full w-full" aria-hidden="true">
       {gridLines.map((y) => (
-        <line key={y} x1={padding} x2={width - padding} y1={y} y2={y} stroke="#e5e7eb" strokeDasharray="4 6" />
+        <line key={y} x1={padding} x2={width - padding} y1={y} y2={y} stroke="#e8e6dc" strokeDasharray="4 6" />
       ))}
 
       {data.map((entry, index) => {
@@ -213,8 +229,8 @@ function PolicyBarChart({
 
         return (
           <g key={entry.name}>
-            <rect x={allowedX} y={height - padding - allowedHeight} width={barWidth} height={allowedHeight} rx="4" fill="#3b82f6" />
-            <rect x={blockedX} y={height - padding - blockedHeight} width={barWidth} height={blockedHeight} rx="4" fill="#ef4444" />
+            <rect x={allowedX} y={height - padding - allowedHeight} width={barWidth} height={allowedHeight} rx="4" fill="#c96442" />
+            <rect x={blockedX} y={height - padding - blockedHeight} width={barWidth} height={blockedHeight} rx="4" fill="#b53333" />
             <text x={groupX} y={height - 6} textAnchor="middle" fill="#6b7280" fontSize="11">
               {entry.name}
             </text>
@@ -226,6 +242,7 @@ function PolicyBarChart({
 }
 
 export default function Home() {
+  const router = useRouter();
   const [activeNav, setActiveNav] = useState("Overview");
   const [isLockdown, setIsLockdown] = useState(false);
   const [logs, setLogs] = useState(SESSION_LOGS);
@@ -238,6 +255,12 @@ export default function Home() {
     { id: 2, name: "Customer Support", status: "active", rules: 8 },
     { id: 3, name: "Data Analysis", status: "inactive", rules: 4 },
   ]);
+  const [policyMode, setPolicyMode] = useState<"ALLOW" | "BLOCK">("BLOCK");
+  const [budgetLimit, setBudgetLimit] = useState(25000);
+  const [feedbackTone, setFeedbackTone] = useState<"positive" | "neutral" | "negative">("neutral");
+  const [feedbackNote, setFeedbackNote] = useState("");
+  const [selectedTool, setSelectedTool] = useState("api.fetch_data");
+  const [stoppedTool, setStoppedTool] = useState("api.fetch_data");
   const [agents, setAgents] = useState([
     { id: "A723", name: "Financial-Bot-1", status: "active", risk: "low", calls: "1.2M" },
     { id: "B911", name: "Support-Agent", status: "paused", risk: "high", calls: "450K" },
@@ -248,10 +271,22 @@ export default function Home() {
   const [logFilter, setLogFilter] = useState("ALL");
   const [searchQuery, setSearchQuery] = useState("");
   const [isSearching, setIsSearching] = useState(false);
-  const [enforcementMode, setEnforcementMode] = useState<"BLOCKING" | "MONITORING">("BLOCKING");
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [sidebarWidth, setSidebarWidth] = useState(256);
   const [isSidebarResizing, setIsSidebarResizing] = useState(false);
+
+  const activeToolOptions = [
+    "stripe.process_refund",
+    "sql.select_users",
+    "api.fetch_data",
+    "email.send",
+  ];
+
+  const liveInterceptions = 980 + logs.length * 2;
+  const allowedDecisions = 820 + logs.filter((log) => log.decision === "ALLOWED").length * 2;
+  const blockedDecisions = 45 + logs.filter((log) => log.decision === "BLOCKED").length;
+  const maskedDecisions = 60 + logs.filter((log) => log.decision === "MASKED (PII)").length;
+  const budgetRemaining = Math.max(0, budgetLimit - 1840 - logs.length * 6);
 
   const notifications = [
     { id: 1, title: "New Threat Detected", desc: "Anomalous spike in Support-Agent", time: "2m ago", type: "alert" },
@@ -398,6 +433,26 @@ export default function Home() {
     );
   };
 
+  const handleStopTool = () => {
+    setStoppedTool(selectedTool);
+    setIsStreaming(false);
+    toast.error(`${selectedTool} stopped`, {
+      description: "The live interceptor is paused until the next policy update.",
+    });
+  };
+
+  const handleSubmitFeedback = () => {
+    if (!feedbackNote.trim()) {
+      toast.error("Add a short feedback note first");
+      return;
+    }
+
+    toast.success("Feedback sent to the agent review queue", {
+      description: `Tone: ${feedbackTone}. The next policy draft will include your note.`,
+    });
+    setFeedbackNote("");
+  };
+
   const toggleSkill = (id: number) => {
     setSkills(skills.map(s => {
       if (s.id === id) {
@@ -421,8 +476,9 @@ export default function Home() {
   };
 
   const handleSettingsClick = () => {
-    setActiveNav("Policy Editor");
-    toast.info("Opened Policy & Skill Editor");
+    router.push("/setting");
+    setIsSidebarOpen(false);
+    toast.info("Opened settings");
   };
 
   const handleMarkAllNotificationsRead = () => {
@@ -481,14 +537,14 @@ export default function Home() {
 
   return (
     <div className={cn(
-      "flex h-screen w-full text-gray-700 font-sans overflow-hidden selection:bg-blue-500/30 transition-colors duration-500",
-      isLockdown ? "bg-[#fff1f2]" : "bg-[#f5f7fb]"
+      "flex h-screen w-full text-[#4d4c48] font-sans overflow-hidden selection:bg-[#c96442]/20 transition-colors duration-500",
+      isLockdown ? "bg-[#f5eaea]" : "bg-[#f5f4ed]"
     )}>
       {/* SIDEBAR */}
       <div className={cn(
         "fixed inset-y-0 left-0 relative max-w-[85vw] flex-shrink-0 border-r flex flex-col z-50 transition-all duration-300 lg:static lg:translate-x-0",
         isSidebarOpen ? "translate-x-0" : "-translate-x-full",
-        isLockdown ? "border-red-900/30 bg-[#fff5f5]" : "border-[#d1d5db] bg-[#ffffff]"
+        isLockdown ? "border-[#b53333]/30 bg-[#f5eaea]" : "border-[#f0eee6] bg-[#faf9f5]"
       )}
       style={{ width: sidebarWidth }}>
         <div className="flex items-center gap-3 px-6 py-6">
@@ -496,10 +552,10 @@ export default function Home() {
         {/* isSidebarOpen ? "translate-x-0" : "-translate-x-full",
         isLockdown ? "border-red-900/30 bg-[#fff5f5]" : "border-[#d1d5db] bg-[#ffffff]" */}
             {/* <Zap size={18} className="fill-current" /> */}
-            <img src="/ll.png" alt="" />
+            <Image src="/2_objects (1).gif" alt="Megent" width={32} height={32} priority />
           </div>
-          <span className="text-xl font-bold tracking-tight text-gray-900">Megent</span>
-          <p className='bg-white/20'>demo</p>
+          <span className="text-xl font-semibold tracking-tight text-[#141413]" style={{ fontFamily: "var(--font-display)" }}>Megent</span>
+          <p className="rounded-full bg-[#e8e6dc] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-[#5e5d59]">Cloud</p>
         </div>
 
         <nav className="flex-1 overflow-y-auto px-3 py-2 space-y-1">
@@ -510,6 +566,8 @@ export default function Home() {
             { icon: Activity, label: "Anomalies" },
             { icon: List, label: "Logs" },
             { icon: PieChart, label: "Reports" },
+            { icon: Database, label: "Budget" },
+            { icon: CheckCircle2, label: "Feedback" },
             { icon: User, label: "Agent Passports" },
           ].map((item) => (
             <div key={item.label} className="flex flex-col">
@@ -521,11 +579,11 @@ export default function Home() {
                 className={cn(
                   "flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors w-full text-left",
                   activeNav === item.label 
-                    ? "bg-[#e5e7eb] text-gray-900" 
-                    : "text-gray-600 hover:text-gray-200 hover:bg-[#f3f4f6]"
+                    ? "bg-[#e8e6dc] text-[#141413]" 
+                    : "text-[#5e5d59] hover:text-[#141413] hover:bg-[#f0eee6]"
                 )}
               >
-                <item.icon size={18} className={activeNav === item.label ? "text-gray-900" : "text-gray-500"} />
+                <item.icon size={18} className={activeNav === item.label ? "text-[#141413]" : "text-[#87867f]"} />
                 {item.label}
               </button>
               
@@ -556,22 +614,42 @@ export default function Home() {
           ))}
         </nav>
 
+        <div className="px-4 pb-4">
+          <div className="rounded-[16px] border border-[#f0eee6] bg-[#faf9f5] p-4 shadow-[0_4px_24px_rgba(20,20,19,0.05)]">
+            <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#87867f]">Budget cap</div>
+            <div className="mt-2 text-lg font-semibold text-[#141413]" style={{ fontFamily: "var(--font-display)" }}>${budgetLimit.toLocaleString()}</div>
+            <div className="mt-1 text-xs text-[#87867f]">{formatCompactCount(budgetRemaining)} remaining</div>
+            <button
+              onClick={() => setActiveNav("Budget")}
+              className="mt-3 inline-flex items-center justify-center rounded-[10px] border border-[#e8e6dc] bg-[#e8e6dc] px-3 py-1.5 text-xs font-semibold text-[#4d4c48] shadow-[0_0_0_1px_#d1cfc5] transition-colors hover:bg-[#f0eee6]"
+            >
+              View budget
+            </button>
+          </div>
+        </div>
+
         <div className={cn(
           "p-4 border-t space-y-4 transition-colors duration-500",
-          isLockdown ? "border-red-900/30" : "border-[#d1d5db]"
+          isLockdown ? "border-[#b53333]/30" : "border-[#f0eee6]"
         )}>
           <button
             onClick={handleSettingsClick}
-            className="flex items-center gap-3 text-sm text-gray-600 hover:text-gray-900 w-full px-2 font-medium transition-colors"
+            className="flex items-center gap-3 text-sm text-[#5e5d59] hover:text-[#141413] w-full px-2 font-medium transition-colors"
           >
-            <SettingsIcon size={18} /> Setting
+            <SettingsIcon size={18} />
+            <span className="flex-1 text-left">Setting</span>
+            <span className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-[#e8e6dc] bg-[#f0eee6]">
+              <svg viewBox="0 0 24 24" aria-hidden="true" className="h-4 w-4 text-[#87867f]" fill="none" stroke="currentColor" strokeWidth="1.5">
+                <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z" />
+              </svg>
+            </span>
           </button>
-          <div className="flex items-center gap-2 px-2 text-xs font-medium text-gray-600">
+          <div className="flex items-center gap-2 px-2 text-xs font-medium text-[#5e5d59]">
             <div className={cn(
-              "w-2 h-2 rounded-full shadow-[0_0_8px_rgba(34,197,94,0.6)] animate-pulse",
-              isLockdown ? "bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.6)]" : "bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]"
+              "w-2 h-2 rounded-full shadow-[0_0_8px_rgba(201,100,66,0.4)] animate-pulse",
+              isLockdown ? "bg-[#b53333] shadow-[0_0_8px_rgba(181,51,51,0.4)]" : "bg-[#c96442] shadow-[0_0_8px_rgba(201,100,66,0.4)]"
             )} />
-            In-Process Guard: <span className={isLockdown ? "text-red-400 font-bold" : "text-green-400"}>{isLockdown ? "LOCKDOWN" : "ACTIVE"}</span>
+            In-Process Guard: <span className={isLockdown ? "text-[#b53333] font-bold" : "text-[#c96442]"}>{isLockdown ? "LOCKDOWN" : "ACTIVE"}</span>
           </div>
         </div>
 
@@ -603,38 +681,38 @@ export default function Home() {
       {/* MAIN CONTENT */}
       <div className={cn(
         "flex-1 flex flex-col min-w-0 min-h-0 transition-colors duration-500",
-        isLockdown ? "bg-[#fff1f2]" : "bg-[#f5f7fb]"
+        isLockdown ? "bg-[#f5eaea]" : "bg-[#f5f4ed]"
       )}>
         {/* TOP BAR */}
         <header className={cn(
           "min-h-14 flex flex-wrap items-center justify-between gap-3 px-4 py-2 sm:px-6 border-b transition-colors duration-500 relative",
-          isLockdown ? "border-red-900/30 bg-[#fff1f2]" : "border-[#d1d5db] bg-[#f5f7fb]"
+          isLockdown ? "border-[#b53333]/30 bg-[#f5eaea]" : "border-[#f0eee6] bg-[#f5f4ed]"
         )}>
           <div className="flex flex-1 items-center gap-3 min-w-0 lg:max-w-xl">
             <button
               type="button"
               aria-label="Open sidebar"
               onClick={() => setIsSidebarOpen((prev) => !prev)}
-              className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-[#d1d5db] bg-[#ffffff] text-black hover:bg-gray-100 lg:hidden"
+              className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-[#e8e6dc] bg-[#faf9f5] text-[#141413] hover:bg-[#f0eee6] lg:hidden"
             >
               <List size={18} />
             </button>
             <div className="relative flex-1">
               <form onSubmit={handleSearch}>
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" size={18} />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[#87867f]" size={18} />
                 <input 
                   type="text" 
                   placeholder="Search agents, policies, or audit logs..." 
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className={cn(
-                    "w-full bg-[#ffffff] border border-[#d1d5db] rounded-lg py-2 pl-10 pr-4 text-sm text-gray-700 focus:outline-none focus:border-blue-500/50 transition-all",
-                    isLockdown ? "bg-[#ffe4e6] border-red-900/50" : "bg-[#ffffff] border-[#d1d5db]"
+                    "w-full bg-[#faf9f5] border border-[#e8e6dc] rounded-lg py-2 pl-10 pr-4 text-sm text-[#4d4c48] focus:outline-none focus:border-[#3898ec] transition-all",
+                    isLockdown ? "bg-[#f5eaea] border-[#b53333]/40" : "bg-[#faf9f5] border-[#e8e6dc]"
                   )}
                 />
                 {isSearching && (
                   <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                    <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+                    <div className="w-4 h-4 border-2 border-[#c96442] border-t-transparent rounded-full animate-spin" />
                   </div>
                 )}
               </form>
@@ -647,8 +725,8 @@ export default function Home() {
               className={cn(
                 "flex items-center gap-2 px-3 py-1.5 rounded text-xs font-bold border transition-all duration-300",
                 isLockdown 
-                  ? "bg-red-500 text-white border-red-400 shadow-[0_0_15px_rgba(239,68,68,0.5)] animate-pulse" 
-                  : "bg-transparent text-red-500 border-red-500/30 hover:bg-red-500/10"
+                  ? "bg-[#b53333] text-[#faf9f5] border-[#b53333] shadow-[0_0_15px_rgba(181,51,51,0.35)] animate-pulse" 
+                  : "bg-transparent text-[#b53333] border-[#b53333]/30 hover:bg-[#f5eaea]"
               )}
             >
               <ShieldAlert size={14} />
@@ -658,10 +736,10 @@ export default function Home() {
             <div className="relative">
               <button 
                 onClick={() => setShowNotifications(!showNotifications)}
-                className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors relative"
+                className="p-2 text-[#5e5d59] hover:text-[#141413] hover:bg-[#f0eee6] rounded-lg transition-colors relative"
               >
                 <Bell size={20} />
-                <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-blue-500 rounded-full border-2 border-[#f5f7fb]" />
+                <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-[#c96442] rounded-full border-2 border-[#f5f4ed]" />
               </button>
               
               <AnimatePresence>
@@ -672,30 +750,30 @@ export default function Home() {
                       initial={{ opacity: 0, y: 10, scale: 0.95 }}
                       animate={{ opacity: 1, y: 0, scale: 1 }}
                       exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                      className="absolute right-0 mt-2 w-[min(20rem,calc(100vw-2rem))] bg-[#ffffff] border border-[#d1d5db] rounded-xl shadow-2xl z-50 overflow-hidden"
+                      className="absolute right-0 mt-2 w-[min(20rem,calc(100vw-2rem))] bg-[#faf9f5] border border-[#f0eee6] rounded-[16px] shadow-[0_24px_60px_rgba(20,20,19,0.12)] z-50 overflow-hidden"
                     >
-                      <div className="p-4 border-b border-[#d1d5db] flex items-center justify-between">
-                        <h3 className="text-sm font-bold text-gray-900">Notifications</h3>
-                        <button onClick={handleMarkAllNotificationsRead} className="text-[10px] text-blue-400 hover:underline">Mark all as read</button>
+                      <div className="p-4 border-b border-[#f0eee6] flex items-center justify-between">
+                        <h3 className="text-sm font-semibold text-[#141413]" style={{ fontFamily: "var(--font-display)" }}>Notifications</h3>
+                        <button onClick={handleMarkAllNotificationsRead} className="text-[10px] text-[#c96442] hover:underline">Mark all as read</button>
                       </div>
                       <div className="max-h-96 overflow-y-auto">
                         {notifications.map(n => (
-                          <div key={n.id} className="p-4 border-b border-[#d1d5db]/50 hover:bg-[#f3f4f6] transition-colors cursor-pointer">
+                          <div key={n.id} className="p-4 border-b border-[#f0eee6] hover:bg-[#f0eee6] transition-colors cursor-pointer">
                             <div className="flex items-start gap-3">
                               <div className={cn(
                                 "mt-1 w-2 h-2 rounded-full shrink-0",
-                                n.type === 'alert' ? "bg-red-500" : n.type === 'warning' ? "bg-amber-500" : "bg-blue-500"
+                                n.type === 'alert' ? "bg-[#b53333]" : n.type === 'warning' ? "bg-[#c96442]" : "bg-[#4d4c48]"
                               )} />
                               <div className="space-y-1">
-                                <div className="text-xs font-semibold text-gray-900">{n.title}</div>
-                                <div className="text-[11px] text-gray-500 leading-tight">{n.desc}</div>
-                                <div className="text-[10px] text-gray-600">{n.time}</div>
+                                <div className="text-xs font-semibold text-[#141413]">{n.title}</div>
+                                <div className="text-[11px] text-[#5e5d59] leading-tight">{n.desc}</div>
+                                <div className="text-[10px] text-[#87867f]">{n.time}</div>
                               </div>
                             </div>
                           </div>
                         ))}
                       </div>
-                      <button onClick={handleViewAllNotifications} className="w-full p-3 text-xs text-gray-500 hover:text-gray-900 hover:bg-[#f3f4f6] transition-colors text-center font-medium">
+                      <button onClick={handleViewAllNotifications} className="w-full p-3 text-xs text-[#5e5d59] hover:text-[#141413] hover:bg-[#f0eee6] transition-colors text-center font-medium">
                         View all notifications
                       </button>
                     </motion.div>
@@ -707,14 +785,14 @@ export default function Home() {
             <div className="relative">
               <button 
                 onClick={() => setShowProfileMenu(!showProfileMenu)}
-                className="flex items-center gap-2 p-1 pr-3 hover:bg-gray-100 rounded-lg transition-colors"
+                className="flex items-center gap-2 p-1 pr-3 hover:bg-[#f0eee6] rounded-lg transition-colors"
               >
-                <div className="w-8 h-8 rounded-[18px] bg-black from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold text-xs">
+                <div className="w-8 h-8 rounded-[18px] bg-[#30302e] flex items-center justify-center text-[#faf9f5] font-bold text-xs">
                   D
                 </div>
                 <div className="text-left hidden sm:block">
-                  <div className="text-xs font-semibold text-gray-900">Demo</div>
-                  <div className="text-[10px] text-gray-500">Enterprise Admin</div>
+                  <div className="text-xs font-semibold text-[#141413]">Cloud</div>
+                  <div className="text-[10px] text-[#87867f]">Enterprise Admin</div>
                 </div>
               </button>
 
@@ -726,25 +804,25 @@ export default function Home() {
                       initial={{ opacity: 0, y: 10, scale: 0.95 }}
                       animate={{ opacity: 1, y: 0, scale: 1 }}
                       exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                      className="absolute right-0 mt-2 w-[min(14rem,calc(100vw-2rem))] bg-[#ffffff] border border-[#d1d5db] rounded-xl shadow-2xl z-50 overflow-hidden"
+                      className="absolute right-0 mt-2 w-[min(14rem,calc(100vw-2rem))] bg-[#faf9f5] border border-[#f0eee6] rounded-[16px] shadow-[0_24px_60px_rgba(20,20,19,0.12)] z-50 overflow-hidden"
                     >
-                      <div className="p-4 border-b border-[#d1d5db]">
-                        <div className="text-xs font-semibold text-gray-900">mikilezen@gmail.com</div>
-                        <div className="text-[10px] text-gray-500 mt-0.5">Organization: Megent Corp</div>
+                      <div className="p-4 border-b border-[#f0eee6]">
+                        <div className="text-xs font-semibold text-[#141413]">mikilezen@gmail.com</div>
+                        <div className="text-[10px] text-[#87867f] mt-0.5">Organization: Megent Corp</div>
                       </div>
                       <div className="p-2">
-                        <button onClick={() => handleProfileMenuAction("profile")} className="w-full flex items-center gap-2 px-3 py-2 text-xs text-gray-600 hover:text-gray-900 hover:bg-[#f3f4f6] rounded-lg transition-colors">
+                        <button onClick={() => handleProfileMenuAction("profile")} className="w-full flex items-center gap-2 px-3 py-2 text-xs text-[#5e5d59] hover:text-[#141413] hover:bg-[#f0eee6] rounded-lg transition-colors">
                           <User size={14} /> Profile Settings
                         </button>
-                        <button onClick={() => handleProfileMenuAction("security")} className="w-full flex items-center gap-2 px-3 py-2 text-xs text-gray-600 hover:text-gray-900 hover:bg-[#f3f4f6] rounded-lg transition-colors">
+                        <button onClick={() => handleProfileMenuAction("security")} className="w-full flex items-center gap-2 px-3 py-2 text-xs text-[#5e5d59] hover:text-[#141413] hover:bg-[#f0eee6] rounded-lg transition-colors">
                           <Shield size={14} /> Security Keys
                         </button>
-                        <button onClick={() => handleProfileMenuAction("api")} className="w-full flex items-center gap-2 px-3 py-2 text-xs text-gray-600 hover:text-gray-900 hover:bg-[#f3f4f6] rounded-lg transition-colors">
+                        <button onClick={() => handleProfileMenuAction("api")} className="w-full flex items-center gap-2 px-3 py-2 text-xs text-[#5e5d59] hover:text-[#141413] hover:bg-[#f0eee6] rounded-lg transition-colors">
                           <Grid size={14} /> API Access
                         </button>
                       </div>
-                      <div className="p-2 border-t border-[#d1d5db]">
-                        <button onClick={() => handleProfileMenuAction("signout")} className="w-full flex items-center gap-2 px-3 py-2 text-xs text-red-400 hover:bg-red-500/10 rounded-lg transition-colors">
+                      <div className="p-2 border-t border-[#f0eee6]">
+                        <button onClick={() => handleProfileMenuAction("signout")} className="w-full flex items-center gap-2 px-3 py-2 text-xs text-[#b53333] hover:bg-[#f5eaea] rounded-lg transition-colors">
                           <LogOut size={14} /> Sign Out
                         </button>
                       </div>
@@ -759,38 +837,60 @@ export default function Home() {
         <main className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6">
           {activeNav === "Overview" && (
             <>
-            {/* HEADER */}
-            <div className="flex items-center justify-between">
-              <h1 className="text-2xl font-semibold text-gray-900 tracking-tight">Overview & Command Center</h1>
-              <button 
-                onClick={() => setIsCreatePolicyOpen(true)}
-                className="flex items-center gap-2 bg-white text-black px-4 py-2 rounded-md text-sm font-semibold hover:bg-gray-100 transition-colors"
-              >
-                <Plus size={16} /> Create Policy
-              </button>
-            </div>
+            {/* <div className={cn(
+              "rounded-[32px] border p-6 sm:p-8 shadow-[0_4px_24px_rgba(20,20,19,0.05)]",
+              isLockdown ? "bg-[#f5eaea] border-[#b53333]/30" : "bg-[#faf9f5] border-[#f0eee6]"
+            )}> */}
+              {/* <div className="flex flex-col gap-6 xl:flex-row xl:items-end xl:justify-between"> */}
+                {/* <div className="max-w-3xl space-y-3">
+                  <div className="inline-flex items-center gap-2 rounded-full border border-[#f0eee6] bg-[#faf9f5] px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-[#5e5d59] shadow-[0_0_0_1px_#f0eee6]">
+                    Policy cockpit
+                  </div>
+                  <h1 className="text-3xl sm:text-4xl font-medium text-[#141413] tracking-tight" style={{ fontFamily: "var(--font-display)" }}>
+                    Review allow and block decisions, cap spend, and capture feedback from one surface.
+                  </h1>
+                  <p className="max-w-2xl text-sm sm:text-base text-[#5e5d59] leading-relaxed">
+                    This console keeps the operator loop tight: you can pause a tool, set a realistic budget limit, and send feedback straight into the next policy draft.
+                  </p>
+                </div> */}
+                {/* <div className="flex flex-wrap gap-2">
+                  <button
+                    onClick={() => setIsCreatePolicyOpen(true)}
+                    className="inline-flex items-center gap-2 rounded-[12px] bg-[#c96442] px-4 py-2.5 text-sm font-semibold text-[#faf9f5] shadow-[0_0_0_1px_#c96442] transition-transform hover:-translate-y-0.5"
+                  >
+                    <Plus size={16} /> Create policy
+                  </button>
+                  <button
+                    onClick={handleStopTool}
+                    className="inline-flex items-center gap-2 rounded-[12px] border border-[#e8e6dc] bg-[#e8e6dc] px-4 py-2.5 text-sm font-semibold text-[#4d4c48] shadow-[0_0_0_1px_#d1cfc5] transition-colors hover:bg-[#f0eee6]"
+                  >
+                    <Square size={16} /> Stop tool
+                  </button>
+                </div> */}
+              {/* </div> */}
+            {/* </div> */}
 
             {/* METRIC CARDS */}
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
               <motion.div 
                 whileHover={{ scale: 1.02 }}
                 className={cn(
-                  "border rounded-xl p-5 relative overflow-hidden transition-all duration-500 cursor-pointer",
-                  isLockdown ? "bg-[#ffe4e6] border-red-900/50 shadow-[0_0_30px_-10px_rgba(239,68,68,0.3)]" : "bg-[#ffffff] border-[#d1d5db] shadow-[0_0_30px_-10px_rgba(59,130,246,0.15)]"
+                  "border rounded-[16px] p-5 relative overflow-hidden transition-all duration-500 cursor-pointer shadow-[0_4px_24px_rgba(20,20,19,0.05)]",
+                  isLockdown ? "bg-[#f5eaea] border-[#b53333]/30" : "bg-[#faf9f5] border-[#f0eee6]"
                 )}
               >
                 <div className={cn(
                   "absolute top-0 left-0 w-full h-0.5 bg-gradient-to-r to-transparent",
-                  isLockdown ? "from-red-500/50" : "from-blue-500/50"
+                  isLockdown ? "from-[#b53333]/50" : "from-[#c96442]/50"
                 )} />
-                <div className="text-sm font-medium text-gray-600 mb-2">Live Interceptions (24h)</div>
+                <div className="text-sm font-medium text-[#5e5d59] mb-2">Live Interceptions (24h)</div>
                 <div className="flex items-end justify-between">
                   <div>
-                    <div className="text-4xl font-bold text-gray-900 tracking-tight">2.3M</div>
-                    <div className="text-xs text-gray-500 mt-1">$&lt; 1ms avg. latency</div>
+                    <div className="text-4xl font-semibold text-[#141413] tracking-tight" style={{ fontFamily: "var(--font-display)" }}>{formatCompactCount(liveInterceptions)}</div>
+                    <div className="text-xs text-[#87867f] mt-1">$&lt; 5ms avg. latency</div>
                   </div>
                   <div className="w-32 h-12">
-                    <SparklineChart data={SPARK_DATA} stroke={isLockdown ? "#ef4444" : "#3b82f6"} />
+                    <SparklineChart data={SPARK_DATA} stroke={isLockdown ? "#b53333" : "#c96442"} />
                   </div>
                 </div>
               </motion.div>
@@ -798,38 +898,51 @@ export default function Home() {
               <motion.div 
                 whileHover={{ scale: 1.02 }}
                 className={cn(
-                  "border rounded-xl p-5 relative overflow-hidden transition-all duration-500 cursor-pointer",
-                  isLockdown ? "bg-[#ffe4e6] border-red-900/50" : "bg-[#ffffff] border-[#d1d5db]"
+                  "border rounded-[16px] p-5 relative overflow-hidden transition-all duration-500 cursor-pointer shadow-[0_4px_24px_rgba(20,20,19,0.05)]",
+                  isLockdown ? "bg-[#f5eaea] border-[#b53333]/30" : "bg-[#faf9f5] border-[#f0eee6]"
                 )}
               >
                 <div className={cn(
                   "absolute top-0 left-0 w-full h-0.5 bg-gradient-to-r to-transparent",
-                  isLockdown ? "from-red-500/50" : "from-blue-500/50"
+                  isLockdown ? "from-[#b53333]/50" : "from-[#c96442]/50"
                 )} />
-                <div className="text-sm font-medium text-gray-600 mb-2">Active Agent Passports</div>
+                <div className="text-sm font-medium text-[#5e5d59] mb-2">Active Agent Passports</div>
                 <div>
-                  <div className="text-4xl font-bold text-gray-900 tracking-tight">842</div>
-                  <div className="text-xs text-gray-500 mt-1">100% JWT Verified</div>
+                  <div className="text-4xl font-semibold text-[#141413] tracking-tight" style={{ fontFamily: "var(--font-display)" }}>96</div>
+                  <div className="text-xs text-[#87867f] mt-1">98% JWT Verified</div>
                 </div>
               </motion.div>
 
               <motion.div 
                 whileHover={{ scale: 1.02 }}
-                className="bg-[#fff1f2] border border-[#371f1f] rounded-xl p-5 relative overflow-hidden shadow-[0_0_30px_-10px_rgba(239,68,68,0.15)] cursor-pointer"
+                className={cn(
+                  "border rounded-[16px] p-5 relative overflow-hidden shadow-[0_4px_24px_rgba(20,20,19,0.05)] cursor-pointer",
+                  isLockdown ? "bg-[#f5eaea] border-[#b53333]/30" : "bg-[#faf9f5] border-[#f0eee6]"
+                )}
               >
-                <div className="absolute top-0 left-0 w-full h-0.5 bg-gradient-to-r from-red-500/50 to-transparent" />
+                <div className="absolute top-0 left-0 w-full h-0.5 bg-gradient-to-r from-[#c96442]/60 to-transparent" />
                 <div className="flex items-center justify-between mb-2">
-                  <div className="text-sm font-medium text-gray-600">Total Blocked Actions</div>
-                  <span className="text-[10px] font-bold bg-red-500/10 text-red-500 px-2 py-0.5 rounded border border-red-500/20">BLOCK</span>
+                  <div className="text-sm font-medium text-[#5e5d59]">Policy Decisions</div>
+                  <span className="text-[10px] font-bold bg-[#e8e6dc] text-[#4d4c48] px-2 py-0.5 rounded border border-[#e8e6dc]">BLOCK / ALLOW</span>
                 </div>
-                <div>
-                  <div className="text-4xl font-bold text-gray-900 tracking-tight">314</div>
-                  <div className="text-xs text-gray-500 mt-1 flex items-center gap-1.5">
-                    <div className="w-1.5 h-1.5 rounded-full bg-red-500" /> Policy Violations
+                <div className="space-y-3">
+                  <div className="text-4xl font-semibold text-[#141413] tracking-tight" style={{ fontFamily: "var(--font-display)" }}>{formatCompactCount(blockedDecisions + maskedDecisions)}</div>
+                  <div className="flex flex-wrap gap-3 text-xs text-[#5e5d59]">
+                    <span className="inline-flex items-center gap-1.5 rounded-full bg-[#e8e6dc] px-2 py-1 text-[#4d4c48] shadow-[0_0_0_1px_#d1cfc5]">
+                      <div className="w-1.5 h-1.5 rounded-full bg-[#4d4c48]" /> {formatCompactCount(allowedDecisions)} allowed
+                    </span>
+                    <span className="inline-flex items-center gap-1.5 rounded-full bg-[#f5eaea] px-2 py-1 text-[#b53333] shadow-[0_0_0_1px_#e8e6dc]">
+                      <div className="w-1.5 h-1.5 rounded-full bg-[#b53333]" /> {formatCompactCount(blockedDecisions)} blocked
+                    </span>
+                    <span className="inline-flex items-center gap-1.5 rounded-full bg-[#faf9f5] px-2 py-1 text-[#87867f] shadow-[0_0_0_1px_#e8e6dc]">
+                      <div className="w-1.5 h-1.5 rounded-full bg-[#87867f]" /> {formatCompactCount(maskedDecisions)} masked
+                    </span>
                   </div>
                 </div>
               </motion.div>
             </div>
+
+
 
             {/* ENFORCEMENT STREAM TABLE */}
             <div className={cn(
@@ -886,9 +999,9 @@ export default function Home() {
                       "border-b transition-colors duration-500",
                       isLockdown ? "bg-[#ffe4e6] border-red-900/50" : "bg-[#f3f4f6] border-[#d1d5db]"
                     )}>
-                      <td colSpan={6} className="px-4 py-2">
+                      <td colSpan={6} className="px-4 py-2 bg-white">
                         <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2 text-sm">
+                          <div className="flex items-center gap-2 text-sm bg-[#f3f4">
                             <span className="text-gray-600">SESSION [A723] -</span>
                             <span className="text-gray-900 font-semibold">Financial-Bot-1</span>
                             <span className="text-green-400 text-xs font-medium">[Verified]</span>
@@ -1444,6 +1557,152 @@ export default function Home() {
             </motion.div>
           )}
 
+          {activeNav === "Budget" && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="space-y-6"
+            >
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                <div>
+                  <h1 className="text-2xl font-semibold text-[#141413] tracking-tight" style={{ fontFamily: "var(--font-display)" }}>Budget & Spend Limits</h1>
+                  <p className="text-sm text-[#87867f]">Set the daily cap and keep enforcement costs predictable.</p>
+                </div>
+                <button
+                  onClick={() => toast.success("Budget updated", { description: "New budget limit saved." })}
+                  className="inline-flex items-center gap-2 rounded-[12px] bg-[#c96442] px-4 py-2 text-sm font-semibold text-[#faf9f5] shadow-[0_0_0_1px_#c96442] transition-colors hover:bg-[#d97757]"
+                >
+                  Save changes
+                </button>
+              </div>
+
+              <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+                <div className="rounded-[16px] border border-[#f0eee6] bg-[#faf9f5] p-6 shadow-[0_4px_24px_rgba(20,20,19,0.05)]">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div className="text-xs font-semibold uppercase tracking-[0.18em] text-[#87867f]">Daily cap</div>
+                      <div className="mt-2 text-3xl font-semibold text-[#141413]" style={{ fontFamily: "var(--font-display)" }}>${budgetLimit.toLocaleString()}</div>
+                    </div>
+                    <div className="text-right text-xs text-[#87867f]">
+                      <div className="font-semibold text-[#4d4c48]">{formatCompactCount(budgetRemaining)}</div>
+                      remaining today
+                    </div>
+                  </div>
+
+                  <input
+                    type="range"
+                    min="5000"
+                    max="100000"
+                    step="1000"
+                    value={budgetLimit}
+                    onChange={(e) => setBudgetLimit(Number(e.target.value))}
+                    className="mt-6 h-2 w-full cursor-pointer appearance-none rounded-full bg-[#e8e6dc] accent-[#c96442]"
+                  />
+
+                  <div className="mt-3 flex items-center justify-between text-[11px] text-[#87867f]">
+                    <span>Low spend</span>
+                    <span>High throughput</span>
+                  </div>
+
+                  <div className="mt-6 rounded-[12px] border border-dashed border-[#e8e6dc] bg-[#f0eee6] px-4 py-3 text-xs text-[#4d4c48]">
+                    Budget alerts trigger when remaining funds drop below 15% or a policy exceeds its allocation.
+                  </div>
+                </div>
+
+                <div className="rounded-[16px] border border-[#f0eee6] bg-[#faf9f5] p-6 shadow-[0_4px_24px_rgba(20,20,19,0.05)]">
+                  <h2 className="text-sm font-semibold text-[#141413]" style={{ fontFamily: "var(--font-display)" }}>Allocation highlights</h2>
+                  <div className="mt-4 space-y-3 text-sm text-[#5e5d59]">
+                    {[
+                      { name: "Financial Ops", pct: 42 },
+                      { name: "Support Assist", pct: 28 },
+                      { name: "Data Analysis", pct: 18 },
+                      { name: "Sandbox", pct: 12 },
+                    ].map((row) => (
+                      <div key={row.name} className="rounded-[12px] border border-[#e8e6dc] bg-[#faf9f5] px-4 py-3">
+                        <div className="flex items-center justify-between">
+                          <span className="font-semibold text-[#4d4c48]">{row.name}</span>
+                          <span className="text-xs text-[#87867f]">{row.pct}%</span>
+                        </div>
+                        <div className="mt-2 h-1.5 w-full rounded-full bg-[#e8e6dc]">
+                          <div className="h-1.5 rounded-full bg-[#c96442]" style={{ width: `${row.pct}%` }} />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          )}
+
+          {activeNav === "Feedback" && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="space-y-6"
+            >
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                <div>
+                  <h1 className="text-2xl font-semibold text-[#141413] tracking-tight" style={{ fontFamily: "var(--font-display)" }}>Try Agent</h1>
+                  <p className="text-sm text-[#87867f]">Send operator guidance into the next policy draft.</p>
+                </div>
+                <div className="rounded-full border border-[#e8e6dc] bg-[#e8e6dc] px-4 py-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-[#4d4c48]">
+                  Agent review
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 gap-6">
+                <div className="rounded-[18px] border border-[#f0eee6] bg-[#faf9f5] p-6 shadow-[0_4px_24px_rgba(20,20,19,0.05)]">
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div>
+                      <div className="text-xs font-semibold uppercase tracking-[0.18em] text-[#87867f]">Operator form</div>
+                      <h2 className="mt-2 text-lg font-semibold text-[#141413]" style={{ fontFamily: "var(--font-display)" }}>Try Agent</h2>
+                      <p className="text-xs text-[#87867f] mt-1">Flag what to allow, block, or simplify on the next pass.</p>
+                    </div>
+                    <button
+                      onClick={handleSubmitFeedback}
+                      className="inline-flex items-center justify-center rounded-[12px] bg-[#c96442] px-4 py-2 text-xs font-semibold text-[#faf9f5] shadow-[0_0_0_1px_#c96442] transition-colors hover:bg-[#d97757]"
+                    >
+                      Send feedback
+                    </button>
+                  </div>
+
+                  <div className="mt-5 flex flex-wrap items-center gap-2">
+                    {[
+                      { tone: "positive" as const, label: "Helpful" },
+                      { tone: "neutral" as const, label: "Neutral" },
+                      { tone: "negative" as const, label: "Needs work" },
+                    ].map((item) => (
+                      <button
+                        key={item.tone}
+                        onClick={() => setFeedbackTone(item.tone)}
+                        className={cn(
+                          "rounded-[12px] border px-3 py-2 text-xs font-semibold transition-colors",
+                          feedbackTone === item.tone
+                            ? "border-[#30302e] bg-[#30302e] text-[#faf9f5]"
+                            : "border-[#e8e6dc] bg-[#faf9f5] text-[#5e5d59] hover:border-[#d1cfc5]"
+                        )}
+                      >
+                        {item.label}
+                      </button>
+                    ))}
+                  </div>
+
+                  <textarea
+                    value={feedbackNote}
+                    onChange={(e) => setFeedbackNote(e.target.value)}
+                    placeholder="Tell the agent what to keep, block, or simplify next time..."
+                    className="mt-4 min-h-40 w-full rounded-[16px] border border-[#e8e6dc] bg-[#faf9f5] px-4 py-3 text-sm text-[#4d4c48] outline-none transition-colors placeholder:text-[#b0aea5] focus:border-[#3898ec]"
+                  />
+
+                  <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <p className="text-xs text-[#87867f]">This feedback is attached to the active policy and audit trail.</p>
+                    <div className="text-xs text-[#5e5d59]">Tone: <span className="font-semibold text-[#141413]">{feedbackTone}</span></div>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          )}
+
           {activeNav === "Policy Editor" && (
             <motion.div 
               initial={{ opacity: 0, y: 20 }}
@@ -1545,33 +1804,60 @@ export default function Home() {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-gray-500 uppercase mb-1.5">Enforcement Mode</label>
+                  <label className="block text-xs font-semibold text-gray-500 uppercase mb-1.5">Decision Mode</label>
                   <div className="grid grid-cols-2 gap-3">
                     <button
-                      onClick={() => setEnforcementMode("BLOCKING")}
+                      onClick={() => setPolicyMode("ALLOW")}
                       className={cn(
                         "flex flex-col items-center gap-2 p-3 rounded-lg border transition-colors",
-                        enforcementMode === "BLOCKING"
-                          ? "border-blue-500/50 bg-blue-500/10 text-blue-400"
+                        policyMode === "ALLOW"
+                          ? "border-green-500/50 bg-green-500/10 text-green-600"
                           : "border-[#d1d5db] bg-[#f5f7fb] text-gray-500 hover:text-gray-700"
                       )}
                     >
-                      <Shield size={20} />
-                      <span className="text-xs font-bold">BLOCKING</span>
+                      <CheckCircle2 size={20} />
+                      <span className="text-xs font-bold">ALLOW</span>
                     </button>
                     <button
-                      onClick={() => setEnforcementMode("MONITORING")}
+                      onClick={() => setPolicyMode("BLOCK")}
                       className={cn(
                         "flex flex-col items-center gap-2 p-3 rounded-lg border transition-colors",
-                        enforcementMode === "MONITORING"
-                          ? "border-blue-500/50 bg-blue-500/10 text-blue-400"
+                        policyMode === "BLOCK"
+                          ? "border-red-500/50 bg-red-500/10 text-red-500"
                           : "border-[#d1d5db] bg-[#f5f7fb] text-gray-500 hover:text-gray-700"
                       )}
                     >
-                      <Activity size={20} />
-                      <span className="text-xs font-bold">MONITORING</span>
+                      <ShieldAlert size={20} />
+                      <span className="text-xs font-bold">BLOCK</span>
                     </button>
                   </div>
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-500 uppercase mb-1.5">Budget Limit</label>
+                  <div className="flex items-center gap-4 rounded-lg border border-[#d1d5db] bg-[#f5f7fb] px-4 py-3">
+                    <input
+                      type="range"
+                      min="5000"
+                      max="100000"
+                      step="1000"
+                      value={budgetLimit}
+                      onChange={(e) => setBudgetLimit(Number(e.target.value))}
+                      className="h-2 w-full cursor-pointer appearance-none rounded-full bg-[#d1d5db] accent-gray-950"
+                    />
+                    <div className="w-24 text-right text-sm font-semibold text-gray-900">${budgetLimit.toLocaleString()}</div>
+                  </div>
+                </div>
+                <div className="rounded-lg border border-dashed border-[#d1d5db] bg-[#f5f7fb] px-4 py-3 flex items-center justify-between gap-3">
+                  <div>
+                    <div className="text-xs font-semibold text-gray-900">Tool stop</div>
+                    <div className="text-[11px] text-gray-500">Stops the active request stream before deployment.</div>
+                  </div>
+                  <button
+                    onClick={handleStopTool}
+                    className="rounded-full bg-gray-950 px-3 py-2 text-xs font-semibold text-white"
+                  >
+                    Stop tool
+                  </button>
                 </div>
               </div>
               <div className="p-6 bg-[#f5f7fb]/50 flex gap-3">
@@ -1585,7 +1871,7 @@ export default function Home() {
                   onClick={() => {
                     setIsCreatePolicyOpen(false);
                     toast.success("Policy Created Successfully", {
-                      description: `The new ${enforcementMode.toLowerCase()} policy is now being propagated to the edge.`
+                      description: `The ${policyMode.toLowerCase()} policy with a $${budgetLimit.toLocaleString()} cap is now being propagated to the edge.`
                     });
                   }}
                   className="flex-1 px-4 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-sm font-semibold text-white transition-colors"
