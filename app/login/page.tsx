@@ -92,12 +92,12 @@ export default function LoginPage() {
 
   return (
     <main className="min-h-screen w-full bg-[#f5f4ed] text-[#141413]">
-      <div className="mx-auto flex min-h-screen w-full max-w-6xl flex-col justify-center gap-10 px-6 py-16 lg:flex-row lg:items-center">
+      <div className="mx-auto flex min-h-screen w-full mx-w-6xl flex-col justify-center gap-10 px-6 py-16 lg:flex-row lg:items-center">
         <section className="max-w-xl space-y-6">
-          <div className="rounded-[24px] border border-[#e8e6dc] bg-[#faf9f5] p-5 shadow-[0_4px_24px_rgba(20,20,19,0.06)]">
+          <div className="rounded-[24px] bordr borer-[#e8e6dc] bg-[#faf9f5] p-5 shadow-[0_4px_24px_rgba(20,20,19,0.06)]">
             <div className="rounded-[20px] bg-[#f0eee6] p-6">
               <Image
-                src="/window.svg"
+                src="/Rectangle.svg"
                 alt="Operator workspace"
                 width={420}
                 height={260}
@@ -105,22 +105,22 @@ export default function LoginPage() {
               />
             </div>
             <div className="mt-4 flex items-center justify-between gap-3">
-              <div className="flex items-center gap-3">
+              {/* <div className="flex items-center gap-3">
                 <div className="h-10 w-10 rounded-full bg-[#e8e6dc] shadow-[0_0_0_1px_#d1cfc5] flex items-center justify-center">
-                  <Image src="/globe.svg" alt="User" width={20} height={20} />
+                  <Image src="/Rectangle.svg" alt="User" width={20} height={20} />
                 </div>
                 <div>
                   <div className="text-sm font-semibold text-[#141413]" style={{ fontFamily: "var(--font-display)" }}>Amara Lee</div>
                   <div className="text-xs text-[#87867f]">Compliance lead</div>
-                </div>
-              </div>
+              {/* </div>
               <span className="rounded-full border border-[#e8e6dc] bg-[#e8e6dc] px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-[#4d4c48]">
                 Active
               </span>
-            </div>
+                </div> */}
+            </div> 
           </div>
 
-          <div className="inline-flex items-center gap-2 rounded-full border border-[#f0eee6] bg-[#faf9f5] px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-[#5e5d59] shadow-[0_0_0_1px_#f0eee6]">
+          {/* <div className="inline-flex items-center gap-2 rounded-full border border-[#f0eee6] bg-[#faf9f5] px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-[#5e5d59] shadow-[0_0_0_1px_#f0eee6]">
             Secure access
           </div>
           <h1
@@ -150,21 +150,21 @@ export default function LoginPage() {
           <div className="flex items-center gap-3 text-xs text-[#5e5d59]">
             <Shield size={14} className="text-[#4d4c48]" />
             Local-only demo storage. No credentials leave your device.
-          </div>
+          </div> */}
         </section>
 
-        <section className="w-full max-w-md rounded-[32px] border border-[#e8e6dc] bg-[#faf9f5] p-6 shadow-[0_20px_60px_rgba(20,20,19,0.08)]">
+        <section className="w-full max-w-md rounded-[32px] boder border-[#e8e6dc] bg-[#faf9f5] p- shadow-[0_20px_60px_rgba(20,20,19,0.08)]">
           <div className="flex items-center justify-between gap-3">
             <div>
-              <div className="text-sm font-semibold text-[#141413]" style={{ fontFamily: "var(--font-display)" }}>{mode === "login" ? "Welcome back" : "Create your workspace"}</div>
-              <div className="text-xs text-[#5e5d59]">{mode === "login" ? "Sign in to continue" : "Set up your operator profile"}</div>
+              <div className="text-sm font-semibold text-grey" style={{ fontFamily: "var(--font-display)" }}>{mode === "login" ? "Welcome back" : "Create your workspace"}</div>
+              {/* <div className="text-xs text-[#5e5d59]">{mode === "login" ? "Sign in to continue" : "Set up your operator profile"}</div> */}
             </div>
             <div className="rounded-full border border-[#e8e6dc] bg-[#e8e6dc] px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-[#4d4c48]">
               {mode}
             </div>
           </div>
 
-          <div className="mt-5 flex gap-2 rounded-full border border-[#e8e6dc] bg-[#e8e6dc] p-1 shadow-[0_0_0_1px_#d1cfc5]">
+          <div className="m-5 flex gap-2 rounded-full border border-[#e8e6dc] bg-[#e8e6dc] p-1 shadow-[0_0_0_1px_#d1cfc5]">
             <button
               type="button"
               onClick={() => setMode("login")}
@@ -184,8 +184,8 @@ export default function LoginPage() {
               Sign up
             </button>
           </div>
-
-          <div className="mt-5 grid gap-3">
+<hr /><br />
+          <div className="mt5 grid gap-3">
             <button
               type="button"
               onClick={() => handleProviderClick("Google")}
