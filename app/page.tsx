@@ -1634,7 +1634,7 @@ export default function Home() {
             </motion.div>
           )}
 
-          {activeNav === "Feedback" && (
+          {activeNav === "Try agent" && (
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
