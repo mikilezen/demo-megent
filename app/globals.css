@@ -10,7 +10,7 @@
 }
 
 :root[data-theme="dark"] {
-  --background: #0f0f0e;
+  --background: #141413;
   --foreground: #f5f4ed;
 }
 
@@ -34,7 +34,7 @@ body {
 }
 
 :root[data-theme="dark"] .bg-white {
-  background-color: #141413 !important;
+  background-color: #30302e !important;
 }
 
 :root[data-theme="dark"] .bg-gray-100 {
@@ -72,17 +72,38 @@ body {
   border-color: #2a2622 !important;
 }
 
+:root[data-theme="dark"] .bg-\[\#f5f4ed\] {
+  background-color: #141413 !important;
+}
+
 :root[data-theme="dark"] .bg-\[\#ffffff\],
 :root[data-theme="dark"] .bg-\[\#faf9f5\],
-:root[data-theme="dark"] .bg-\[\#f5f7fb\],
-:root[data-theme="dark"] .bg-\[\#f5f4ed\],
 :root[data-theme="dark"] .bg-\[\#f0eee6\],
-:root[data-theme="dark"] .bg-\[\#e8e6dc\] {
-  background-color: #141413 !important;
+:root[data-theme="dark"] .bg-\[\#e8e6dc\],
+:root[data-theme="dark"] .bg-\[\#f5f7fb\],
+:root[data-theme="dark"] .bg-\[\#f8fafc\],
+:root[data-theme="dark"] .bg-\[\#f3f4f6\],
+:root[data-theme="dark"] .bg-\[\#e5e7eb\] {
+  background-color: #30302e !important;
+}
+
+:root[data-theme="dark"] .bg-\[\#d1d5db\] {
+  background-color: #2a2622 !important;
+}
+
+:root[data-theme="dark"] .bg-\[\#f5eaea\],
+:root[data-theme="dark"] .bg-\[\#fff1f2\],
+:root[data-theme="dark"] .bg-\[\#ffe4e6\],
+:root[data-theme="dark"] .bg-\[\#fff5f5\] {
+  background-color: #2a1b1b !important;
 }
 
 :root[data-theme="dark"] .text-\[\#141413\] {
   color: #f5f4ed !important;
+}
+
+:root[data-theme="dark"] .text-\[\#3d3d3a\] {
+  color: #d8d5ce !important;
 }
 
 :root[data-theme="dark"] .text-\[\#4d4c48\] {
@@ -97,10 +118,50 @@ body {
   color: #a7a19a !important;
 }
 
+:root[data-theme="dark"] .text-black {
+  color: #f5f4ed !important;
+}
+
 :root[data-theme="dark"] .border-\[\#e8e6dc\],
 :root[data-theme="dark"] .border-\[\#f0eee6\],
-:root[data-theme="dark"] .border-\[\#d1cfc5\] {
+:root[data-theme="dark"] .border-\[\#d1cfc5\],
+:root[data-theme="dark"] .border-\[\#f5f4ed\] {
   border-color: #2a2622 !important;
+}
+
+:root[data-theme="dark"] .bg-\[\#f5f7fb\]\/50 {
+  background-color: rgba(48, 48, 46, 0.5) !important;
+}
+
+:root[data-theme="dark"] .bg-\[\#fff1f2\]\/50 {
+  background-color: rgba(42, 27, 27, 0.5) !important;
+}
+
+:root[data-theme="dark"] .hover\:bg-\[\#f0eee6\]:hover,
+:root[data-theme="dark"] .hover\:bg-\[\#f3f4f6\]:hover,
+:root[data-theme="dark"] .hover\:bg-gray-100:hover {
+  background-color: #30302e !important;
+}
+
+:root[data-theme="dark"] .hover\:bg-\[\#f5eaea\]:hover,
+:root[data-theme="dark"] .hover\:bg-\[\#ffe4e6\]:hover {
+  background-color: #3a2323 !important;
+}
+
+:root[data-theme="dark"] .hover\:bg-\[\#f3f4f6\]\/50:hover {
+  background-color: rgba(48, 48, 46, 0.5) !important;
+}
+
+:root[data-theme="dark"] .hover\:bg-\[\#ffe4e6\]\/50:hover {
+  background-color: rgba(58, 35, 35, 0.5) !important;
+}
+
+:root[data-theme="dark"] .hover\:text-\[\#141413\]:hover {
+  color: #f5f4ed !important;
+}
+
+:root[data-theme="dark"] .hover\:text-\[\#9d2a2a\]:hover {
+  color: #d97757 !important;
 }
 
 .bg-white {
