@@ -1338,7 +1338,7 @@ export default function Home() {
                   </button>
                 </div>
               </div>
-              <div className="flex-1 resize-y min-h-[18rem] max-h-[70vh] bg-[#f8fafc] border border-[#d1d5db] rounded-xl p-4 font-mono text-xs overflow-y-auto">
+              <div className="flex-1 resize-y min-h-[18rem] max-h-[70vh] bg-[fafc] border border-[#d1d5db] rounded-xl p-4 font-mono text-xs overflow-y-auto">
                 <AnimatePresence>
                   {logs.map((log) => (
                     <motion.div 
@@ -1745,7 +1745,7 @@ export default function Home() {
                     <div className="flex gap-2">
                       <button 
                         onClick={() => toast.info(`Editing ${skill.name}`)}
-                        className="text-xs bg-[#f3f4f6] hover:bg-[#222] text-gray-700 px-3 py-1.5 rounded border border-[#d1d5db] transition-colors"
+                        className="text-xs bg-[#f34f6] hover:bg-[#222] text-gray-700 px-3 py-1.5 rounded border border-[#d1d5db] transition-colors"
                       >
                         Edit Rules
                       </button>
