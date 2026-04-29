@@ -2,11 +2,11 @@
 
 import React, { useState } from "react";
 import Image from "next/image";
-import Link from "next/link";
-import { Activity, ChevronRight, Grid, Lock, Shield, User } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { ChevronRight, Lock, User } from "lucide-react";
 import { FcGoogle } from "react-icons/fc";
-import { SiAuth0 } from "react-icons/si";
 import { RiShieldUserLine } from "react-icons/ri";
+import { buildSessionCookie } from "../../lib/auth";
 const DEMO_EMAIL = "demo@megent.dev";
 const DEMO_PASSWORD = "megent123";
 
@@ -16,6 +16,7 @@ type StatusState = {
 } | null;
 
 export default function LoginPage() {
+  const router = useRouter();
   const [mode, setMode] = useState<"login" | "signup">("login");
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState(() => {
@@ -25,10 +26,6 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [remember, setRemember] = useState(true);
   const [status, setStatus] = useState<StatusState>(null);
-  const [hasSession, setHasSession] = useState(() => {
-    if (typeof window === "undefined") return false;
-    return Boolean(window.localStorage.getItem("megent-session"));
-  });
 
   const handleProviderClick = (provider: string) => {
     setStatus({
@@ -47,17 +44,14 @@ export default function LoginPage() {
           email,
           signedInAt: new Date().toISOString(),
         };
-        window.localStorage.setItem("megent-session", JSON.stringify(session));
+        window.localStorage.removeItem("megent-session");
+        document.cookie = buildSessionCookie(session);
         if (remember) {
           window.localStorage.setItem("megent-remember-email", email);
         } else {
           window.localStorage.removeItem("megent-remember-email");
         }
-        setHasSession(true);
-        setStatus({
-          type: "success",
-          message: "Welcome back. Your session is stored locally.",
-        });
+        router.replace("/");
       } else {
         setStatus({
           type: "error",
@@ -286,16 +280,6 @@ export default function LoginPage() {
             >
               {status.message}
             </div>
-          )}
-
-          {hasSession && (
-            <Link
-              href="/"
-              className="mt-4 flex items-center justify-center gap-2 rounded-xl border border-[#e8e6dc] bg-[#faf9f5] px-4 py-2 text-xs font-semibold text-[#4d4c48] shadow-[0_0_0_1px_#e8e6dc] transition-colors hover:bg-[#f0eee6]"
-            >
-              Continue to console
-              <ChevronRight size={14} />
-            </Link>
           )}
 
           <div className="mt-6 text-[11px] text-[#87867f]">

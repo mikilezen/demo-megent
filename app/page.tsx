@@ -12,6 +12,7 @@ import {
 import { twMerge } from "tailwind-merge";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
+import { clearSessionCookie } from "../lib/auth";
 
 type ClassValue =
   | string
@@ -259,8 +260,7 @@ export default function Home() {
   const [budgetLimit, setBudgetLimit] = useState(25000);
   const [feedbackTone, setFeedbackTone] = useState<"positive" | "neutral" | "negative">("neutral");
   const [feedbackNote, setFeedbackNote] = useState("");
-  const [selectedTool, setSelectedTool] = useState("api.fetch_data");
-  const [stoppedTool, setStoppedTool] = useState("api.fetch_data");
+  const selectedTool = "api.fetch_data";
   const [agents, setAgents] = useState([
     { id: "A723", name: "Financial-Bot-1", status: "active", risk: "low", calls: "1.2M" },
     { id: "B911", name: "Support-Agent", status: "paused", risk: "high", calls: "450K" },
@@ -274,13 +274,6 @@ export default function Home() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [sidebarWidth, setSidebarWidth] = useState(256);
   const [isSidebarResizing, setIsSidebarResizing] = useState(false);
-
-  const activeToolOptions = [
-    "stripe.process_refund",
-    "sql.select_users",
-    "api.fetch_data",
-    "email.send",
-  ];
 
   const liveInterceptions = 180 + logs.length * 2;
   const allowedDecisions = 260 + logs.filter((log) => log.decision === "ALLOWED").length * 2;
@@ -434,7 +427,6 @@ export default function Home() {
   };
 
   const handleStopTool = () => {
-    setStoppedTool(selectedTool);
     setIsStreaming(false);
     toast.error(`${selectedTool} stopped`, {
       description: "The live interceptor is paused until the next policy update.",
@@ -512,7 +504,12 @@ export default function Home() {
       return;
     }
 
-    toast.error("Signed out (demo)");
+    if (typeof window !== "undefined") {
+      window.localStorage.removeItem("megent-session");
+      document.cookie = clearSessionCookie();
+    }
+    toast.success("Signed out", { description: "You were redirected to the login page." });
+    router.replace("/login");
   };
 
   const handleIssueNewPassport = () => {

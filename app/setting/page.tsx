@@ -1,10 +1,12 @@
 "use client";
 
 import React, { useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Activity, CheckCircle2, Database, LogOut, Lock, Settings, Shield } from "lucide-react";
 import { toast } from "sonner";
 import { useTheme } from "../theme-provider";
+import { clearSessionCookie } from "../../lib/auth";
 
 const apiKey = {
   name: "Primary workspace key",
@@ -33,6 +35,7 @@ const auditEvents = [
 ];
 
 export default function SettingPage() {
+  const router = useRouter();
   const { theme, resolvedTheme, setTheme } = useTheme();
   const [isRevoked, setIsRevoked] = useState(false);
 
@@ -61,8 +64,10 @@ export default function SettingPage() {
   const handleLogout = () => {
     if (typeof window !== "undefined") {
       window.localStorage.removeItem("megent-session");
+      document.cookie = clearSessionCookie();
     }
-    toast.success("Signed out", { description: "Demo session cleared locally." });
+    toast.success("Signed out", { description: "You were redirected to the login page." });
+    router.replace("/login");
   };
 
   return (
