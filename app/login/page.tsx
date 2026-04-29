@@ -90,8 +90,8 @@ export default function LoginPage() {
     <main className="min-h-screen w-full bg-[#f5f4ed] text-[#141413]">
       <div className="mx-auto flex min-h-screen w-full mx-w-6xl flex-col justify-center gap-10 px-6 py-16 lg:flex-row lg:items-center">
         <section className="max-w-xl space-y-6">
-          <div className="rounded-[24px] bordr borer-[#e8e6dc] bg-[#faf9f5] p-5 shadow-[0_4px_24px_rgba(20,20,19,0.06)]">
-            <div className="rounded-[20px] bg-[#f0eee6] p-6">
+          <div className="rounded-[24px] bordr borr-[#e8e6dc] p-5 shadw-[0_4px_24px_rgba(20,20,19,0.06)]">
+            <div className="rounded-[20px] p-6">
               <Image
                 src="/Rectangle.svg"
                 alt="Operator workspace"
@@ -149,7 +149,7 @@ export default function LoginPage() {
           </div> */}
         </section>
 
-        <section className="w-full max-w-md rounded-[32px] boder border-[#e8e6dc] bg-[#faf9f5] p- shadow-[0_20px_60px_rgba(20,20,19,0.08)]">
+        <section className="w-full max-w-md rounded-[32px] boder p- shadw-[0_20px_60px_rgba(20,20,19,0.08)]">
           <div className="flex items-center justify-between gap-3">
             <div>
               <div className="text-sm font-semibold text-grey" style={{ fontFamily: "var(--font-display)" }}>{mode === "login" ? "Welcome back" : "Create your workspace"}</div>

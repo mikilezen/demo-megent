@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
+import React, { createContext, useContext, useEffect, useMemo, useRef, useState } from "react";
 
 type ThemePreference = "system" | "light" | "dark";
 type ResolvedTheme = "light" | "dark";
@@ -20,17 +20,25 @@ const getSystemTheme = (): ResolvedTheme => {
 };
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
+  const hasWindow = typeof window !== "undefined";
+  const initialStored = hasWindow ? window.localStorage.getItem(storageKey) : null;
+  const isFirstVisit = hasWindow && initialStored === null;
+  const isFirstVisitRef = useRef<boolean>(isFirstVisit);
+
   const [theme, setThemeState] = useState<ThemePreference>(() => {
-    if (typeof window === "undefined") return "system";
-    const stored = window.localStorage.getItem(storageKey);
-    if (stored === "light" || stored === "dark" || stored === "system") {
-      return stored;
+    if (!hasWindow) return "system";
+    if (initialStored === "light" || initialStored === "dark" || initialStored === "system") {
+      return initialStored as ThemePreference;
     }
     return "system";
   });
 
   const [resolvedTheme, setResolvedTheme] = useState<ResolvedTheme>(() => {
-    return theme === "system" ? getSystemTheme() : theme;
+    if (!hasWindow) return "light";
+    const current = (initialStored === "light" || initialStored === "dark" || initialStored === "system")
+      ? (initialStored as ThemePreference)
+      : "system";
+    return current === "system" ? (isFirstVisit ? "light" : getSystemTheme()) : current;
   });
 
   useEffect(() => {
@@ -47,7 +55,12 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       document.documentElement.style.colorScheme = next;
     };
 
-    applyTheme(theme);
+    // On first visit, keep initial appearance light even though preference is "system".
+    if (isFirstVisitRef.current && theme === "system") {
+      applyTheme("light");
+    } else {
+      applyTheme(theme);
+    }
 
     const handleChange = () => {
       if (theme === "system") {
