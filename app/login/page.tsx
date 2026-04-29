@@ -90,7 +90,7 @@ export default function LoginPage() {
     <main className="min-h-screen w-full bg-[#f5f4ed] text-[#141413]">
       <div className="mx-auto flex min-h-screen w-full mx-w-6xl flex-col justify-center gap-10 px-6 py-16 lg:flex-row lg:items-center">
         <section className="max-w-xl space-y-6">
-          <div className="rounded-[24px] bordr borr-[#e8e6dc] p-5 shadw-[0_4px_24px_rgba(20,20,19,0.06)]">
+          <div className="rounded-[24px]">
             <div className="rounded-[20px] p-6">
               <Image
                 src="/Rectangle.svg"
