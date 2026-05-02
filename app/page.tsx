@@ -39,7 +39,7 @@ function cn(...inputs: ClassValue[]) {
   return twMerge(inputs.flatMap(flattenClassValue).join(" "));
 }
 
-const SPARK_DATA = Array.from({ length: 30 }, (_, i) => ({ value: 40 + Math.sin(i / 2) * 20 + Math.random() * 10 }));
+const SPARK_DATA = Array.from({ length: 30 }, (_, i) => ({ value: 50 + Math.sin(i / 2) * 20 + Math.random() * 10 }));
 const ANOMALY_DATA = Array.from({ length: 50 }, (_, i) => {
   const isAnomaly = i === 15 || i === 35 || i === 42;
   const base = 20 + Math.random() * 10;
