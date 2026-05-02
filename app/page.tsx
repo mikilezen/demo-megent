@@ -55,6 +55,7 @@ const SESSION_LOGS = [
   { id: 2, time: "14:02:39", agent: "Financial-Bot-1", verified: true, tool: "sql.select_users", toolIcon: Database, args: '{query: "select * from users_pii", parameters: "***"}', decision: "MASKED (PII)", rule: "policy: finan-ops-v1" },
   { id: 3, time: "14:02:37", agent: "Financial-Bot-1", verified: true, tool: "sql.select_users", toolIcon: Database, args: '{query: "select * from users_pii", parameters: "***"}', decision: "MASKED (PII)", rule: "policy: finan-ops-v1" },
   { id: 4, time: "14:02:33", agent: "Financial-Bot-1", verified: true, tool: "stripe.process_refund", toolIcon: Lock, args: '{query: "select * from users_pii", parameters: "***"}', decision: "BLOCKED", rule: "policy: finan-ops-v1" },
+  { id: 5, time: "14:02:03", agent: "Financial-Bot-1", verified: true, tool: "stripe.pay", toolIcon: Lock, args: '{query: "select * from users", parameters: "***"}', decision: "ALLOWED", rule: "policy: finan-ops-v2" },
 ];
 
 function Badge({ type }: { type: string }) {
