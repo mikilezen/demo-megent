@@ -806,7 +806,7 @@ export default function Home() {
                     >
                       <div className="p-4 border-b border-[#f0eee6]">
                         <div className="text-xs font-semibold text-[#141413]">production@megent.dev</div>
-                        <div className="text-[10px] text-[#87867f] mt-0.5">Organization: Megent</div>
+                        <div className="text-[10px] text-[#87867f] mt-0.5">Organization: Megentnpm run dev</div>
                       </div>
                       <div className="p-2">
                         <button onClick={() => handleProfileMenuAction("profile")} className="w-full flex items-center gap-2 px-3 py-2 text-xs text-[#5e5d59] hover:text-[#141413] hover:bg-[#f0eee6] rounded-lg transition-colors">
