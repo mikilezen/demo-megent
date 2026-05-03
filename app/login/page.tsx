@@ -8,7 +8,7 @@ import { FcGoogle } from "react-icons/fc";
 import { RiShieldUserLine } from "react-icons/ri";
 import { buildSessionCookie } from "../../lib/auth";
 const DEMO_EMAIL = "demo@megent.dev";
-const DEMO_PASSWORD = "Megent123";
+const DEMO_PASSWORD = "demo123";
 
 type StatusState = {
   type: "success" | "error" | "info";
